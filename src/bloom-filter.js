@@ -3,78 +3,69 @@ const { NotImplementedError } = require("../extensions/index.js");
 module.exports = class BloomFilter {
   /**
    * @param {number} size - the size of the storage.
+   * @param {number} hashCount - the number of hash functions.
    */
-  constructor() {
-    // Bloom filter size directly affects the likelihood of false positives.
-    // The bigger the size the lower the likelihood of false positives.
+  constructor(size = 100, hashCount = 3) {
+    this.size = size; // Размер битового массива
+    this.hashCount = hashCount; // Количество хэш-функций
+    this.store = this.createStore(size); // Создание битового массива
   }
 
   /**
-   * @param {string} item
-   */
-  insert(/* item */) {
-    throw new NotImplementedError("Not implemented");
-    // remove line with error and write your code here
-  }
-
-  /**
-   * @param {string} item
-   * @return {boolean}
-   */
-  mayContain(/* item */) {
-    throw new NotImplementedError("Not implemented");
-    // remove line with error and write your code here
-  }
-
-  /**
-   * Creates the data store for our filter.
-   * We use this method to generate the store in order to
-   * encapsulate the data itself and only provide access
-   * to the necessary methods.
-   *
+   * Создаёт хранилище данных в виде битового массива.
    * @param {number} size
-   * @return {Object}
+   * @return {Uint8Array}
    */
-  createStore(/* size */) {
-    throw new NotImplementedError("Not implemented");
-    // remove line with error and write your code here
+  createStore(size) {
+    return new Uint8Array(size); // Создаём массив, где все значения изначально равны 0
   }
 
   /**
+   * Хэш-функция.
+   * Генерирует хэш-значение для строки, используя заданное `seed`.
    * @param {string} item
+   * @param {number} seed
    * @return {number}
    */
-  hash1(/* item */) {
-    throw new NotImplementedError("Not implemented");
-    // remove line with error and write your code here
+  hash(item, seed) {
+    let hash = 0;
+    for (let i = 0; i < item.length; i++) {
+      hash = (hash * seed + item.charCodeAt(i)) % this.size;
+    }
+    return hash;
   }
 
   /**
-   * @param {string} item
-   * @return {number}
-   */
-  hash2(/* item */) {
-    throw new NotImplementedError("Not implemented");
-    // remove line with error and write your code here
-  }
-
-  /**
-   * @param {string} item
-   * @return {number}
-   */
-  hash3(/* item */) {
-    throw new NotImplementedError("Not implemented");
-    // remove line with error and write your code here
-  }
-
-  /**
-   * Runs all 3 hash functions on the input and returns an array of results.
-   *
+   * Генерирует массив хэш-значений для заданной строки.
    * @param {string} item
    * @return {number[]}
    */
-  getHashValues(/* item */) {
-    throw new NotImplementedError("Not implemented");
-    // remove line with error and write your code here
+  getHashValues(item) {
+    const hashValues = [];
+    for (let i = 1; i <= this.hashCount; i++) {
+      hashValues.push(this.hash(item, i));
+    }
+    return hashValues;
+  }
+
+  /**
+   * Добавляет элемент в фильтр Блума.
+   * @param {string} item
+   */
+  insert(item) {
+    const hashValues = this.getHashValues(item);
+    hashValues.forEach((hash) => {
+      this.store[hash] = 1; // Устанавливаем биты в массиве
+    });
+  }
+
+  /**
+   * Проверяет, может ли элемент принадлежать множеству.
+   * @param {string} item
+   * @return {boolean}
+   */
+  mayContain(item) {
+    const hashValues = this.getHashValues(item);
+    return hashValues.every((hash) => this.store[hash] === 1);
   }
 };
